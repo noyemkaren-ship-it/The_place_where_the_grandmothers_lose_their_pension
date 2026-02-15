@@ -4,7 +4,7 @@ from datetime import datetime
 
 class Bet(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="users.id", index=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
     game: str
     stake: int
     selection_json: str
