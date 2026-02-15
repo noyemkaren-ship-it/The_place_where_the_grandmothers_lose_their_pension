@@ -1,24 +1,32 @@
 from fastapi import Depends, Header
-from passlib.context import CryptContext
 from sqlalchemy.exc import NoResultFound
 from sqlmodel import Session, select
 from starlette.exceptions import HTTPException
+import bcrypt
+import hashlib
 
 from db.database import get_session
 from models.token import Token
 from models.user import User
 
-pwd_context = CryptContext(schemes=['bcrypt'],
-                           deprecated="auto")
-
-
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
-
+    """Хеширование пароля с помощью bcrypt + SHA-256"""
+    # SHA-256 для снятия ограничения длины
+    pre_hashed = hashlib.sha256(password.encode('utf-8')).digest()
+    # bcrypt хеширование
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(pre_hashed, salt)
+    return hashed.decode('utf-8')
 
 def verify_password(password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(password, hashed_password)
-
+    """Проверка пароля"""
+    # Тот же SHA-256 для проверяемого пароля
+    pre_hashed = hashlib.sha256(password.encode('utf-8')).digest()
+    # Проверка через bcrypt
+    return bcrypt.checkpw(
+        pre_hashed, 
+        hashed_password.encode('utf-8')
+    )
 
 def get_current_user(
         authorization: str | None = Header(default=None),
